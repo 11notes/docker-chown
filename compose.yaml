@@ -1,0 +1,46 @@
+name: "chown"
+services:
+  chown:
+    image: "11notes/chown:stable"
+    container_name: "chown"
+    environment:
+      TZ: "Europe/Zurich"
+    volumes:
+      - source: "${PWD}/foo/bar/etc"
+        target: "/chown/bar.etc"
+        type: bind
+        bind:
+          create_host_path: true
+      - source: "${PWD}/foo/bar/var"
+        target: "/chown/bar.var"
+        type: bind
+        bind:
+          create_host_path: true
+  rsync:
+    image: "11notes/volume-rsync:stable"
+    container_name: "rsync"
+    depends_on:
+      chown:
+        condition: service_completed_successfully
+    command: ["sender"]
+    environment:
+      TZ: "Europe/Zurich"
+      DEBUG: true
+      SSH_HOSTS: |-
+        10.255.255.22:22:22001
+      SSH_KNOWN_HOSTS: |-
+        [10.255.255.22]:22001 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII5sfkgeALIpQ6GDwPp9R0K+ZsXWe3yjScK6wa/xjs1a
+      SSH_PRIVATE_KEY: |-
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+        QyNTUxOQAAACCObH5IHgCyKUOhg8D6fUdCvmbF1nt8o0nCusGv8Y7NWgAAAJj74RNX++ET
+        VwAAAAtzc2gtZWQyNTUxOQAAACCObH5IHgCyKUOhg8D6fUdCvmbF1nt8o0nCusGv8Y7NWg
+        AAAEBbHIaHtNR4UM7eEY0K4v+6XlA7qqwMD4ejmm6ue1Y8I45sfkgeALIpQ6GDwPp9R0K+
+        ZsXWe3yjScK6wa/xjs1aAAAAEXJvb3RAYjY2ODdlZWNiZjhiAQIDBA==
+        -----END OPENSSH PRIVATE KEY-----
+    tmpfs:
+      - "/run/inotifyd:uid=1000,gid=1000"
+    volumes:
+      - "${PWD}/foo/bar/etc:/rsync/etc"
+      - "${PWD}/foo/bar/var:/rsync/var"
+    restart: "always"
